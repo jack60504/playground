@@ -34,3 +34,48 @@ curl https://api.groq.com/openai/v1/chat/completions \
   ],
   "tool_choice": "auto"
 }'
+
+import requests
+
+api_url = "http://localhost:8000/v1/chat/completions"
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer YOUR_API_KEY"
+}
+
+messages = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "What is 1234 * 5678?"}
+]
+
+# Define the function the model can call
+functions = [
+    {
+        "name": "calculate",
+        "description": "Perform a basic arithmetic operation: add, subtract, multiply, divide two numbers",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "operation": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"]},
+                "num1": {"type": "number"},
+                "num2": {"type": "number"}
+            },
+            "required": ["operation", "num1", "num2"]
+        }
+    }
+]
+
+payload = {
+    "model": "llama3.1-70b-instruct",
+    "messages": messages,
+    "functions": functions,
+    # Encouraging the model to call the function if it can't directly answer
+    "function_call": "auto"
+}
+
+response = requests.post(api_url, headers=headers, json=payload)
+result = response.json()
+
+print(result)
+
+
