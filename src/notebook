@@ -78,4 +78,12 @@ result = response.json()
 
 print(result)
 
+docker run -d -p 3000:8080 \
+-v open-webui:/app/backend/data \
+-e OPENAI_API_BASE_URLS="https://your-openai-endpoint.com/v1" \
+-e OPENAI_API_KEYS="your_openai_api_key" \
+--name open-webui \
+--restart always \
+ghcr.io/open-webui/open-webui:main
+
 
