@@ -87,3 +87,25 @@ docker run -d -p 3000:8080 \
 ghcr.io/open-webui/open-webui:main
 
 
+
+{
+    "role": "system",
+    "content": "You are a helpful assistant with tool-calling capabilities. 
+  
+  Available tools:
+  1. **lookup**: This tool retrieves information based on a query.
+     - **Parameters**: `query` (string) - The term or question to look up.
+     - **Output**: A JSON object with a `result` field containing the retrieved information.
+  
+  When a user asks a question that requires external information, respond with a JSON tool call in the format:
+  {\"name\": tool_name, \"parameters\": {\"parameter_name\": parameter_value}}.
+  
+  After receiving tool output, use it to provide a clear and concise answer to the user."
+  }
+
+  {
+    "role": "user",
+    "content": "What is the capital of France?"
+  }
+
+  
