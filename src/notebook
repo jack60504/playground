@@ -133,4 +133,106 @@ ghcr.io/open-webui/open-webui:main
   <|start_header_id|>user<|end_header_id|>
   What is the capital of France?
   <|eot_id|>
-   
+  
+
+  import gradio as gr
+import requests
+import json
+
+# Initialize API call history
+api_call_history = []
+
+def api_request(method, url, headers, json_data):
+    try:
+        # Parse headers and JSON data if provided
+        headers_dict = json.loads(headers) if headers else {}
+        json_payload = json.loads(json_data) if json_data else None
+
+        # Send the appropriate request
+        if method == "GET":
+            response = requests.get(url, headers=headers_dict)
+        elif method == "POST":
+            response = requests.post(url, headers=headers_dict, json=json_payload)
+        elif method == "PUT":
+            response = requests.put(url, headers=headers_dict, json=json_payload)
+        elif method == "DELETE":
+            response = requests.delete(url, headers=headers_dict, json=json_payload)
+        else:
+            return "Unsupported HTTP method."
+
+        # Save the API call details to history
+        api_call_history.append({
+            "method": method,
+            "url": url,
+            "headers": headers,
+            "json_data": json_data,
+            "response": {
+                "Status Code": response.status_code,
+                "Headers": dict(response.headers),
+                "Body": response.text
+            }
+        })
+
+        # Return the response details
+        return {
+            "Status Code": response.status_code,
+            "Headers": dict(response.headers),
+            "Body": response.text
+        }
+    except Exception as e:
+        return {"Error": str(e)}
+
+def get_api_history():
+    return api_call_history
+
+def load_api_call(index):
+    if 0 <= index < len(api_call_history):
+        call = api_call_history[index]
+        return call["method"], call["url"], call["headers"], call["json_data"]
+    else:
+        return "", "", "", ""
+
+# Gradio UI components
+method_dropdown = gr.Dropdown(label="HTTP Method", choices=["GET", "POST", "PUT", "DELETE"], value="GET")
+url_input = gr.Textbox(label="API Endpoint", placeholder="Enter the URL here")
+headers_input = gr.Textbox(label="Headers (JSON format)", placeholder='{"Content-Type": "application/json"}', value="")
+json_input = gr.Textbox(label="JSON Data (for POST/PUT)", placeholder="Enter JSON payload here", value="")
+history_output = gr.JSON(label="API Call History")
+output = gr.JSON(label="Response")
+
+def update_history():
+    return api_call_history
+
+history_index_input = gr.Number(label="History Index", precision=0, value=0)
+loaded_call_output = gr.JSON(label="Loaded API Call")
+
+# Gradio Interface
+interface = gr.Blocks()
+
+with interface:
+    gr.Markdown("## API Tester with History")
+
+    with gr.Row():
+        method_dropdown = gr.Dropdown(label="HTTP Method", choices=["GET", "POST", "PUT", "DELETE"], value="GET")
+        url_input = gr.Textbox(label="API Endpoint", placeholder="Enter the URL here")
+
+    headers_input = gr.Textbox(label="Headers (JSON format)", placeholder='{"Content-Type": "application/json"}', value="")
+    json_input = gr.Textbox(label="JSON Data (for POST/PUT)", placeholder="Enter JSON payload here", value="")
+
+    response_button = gr.Button("Send Request")
+    response_output = gr.JSON(label="Response")
+
+    response_button.click(api_request, [method_dropdown, url_input, headers_input, json_input], response_output)
+
+    gr.Markdown("### API Call History")
+    history_output = gr.JSON(label="API Call History")
+    update_button = gr.Button("Update History")
+    update_button.click(update_history, inputs=[], outputs=history_output)
+
+    gr.Markdown("### Load API Call from History")
+    history_index_input = gr.Number(label="History Index", precision=0, value=0)
+    load_button = gr.Button("Load API Call")
+    load_button.click(load_api_call, inputs=[history_index_input], outputs=[method_dropdown, url_input, headers_input, json_input])
+
+interface.launch()
+
